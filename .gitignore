@@ -1,0 +1,6 @@
+# vscode workspace
+**.code-workspace
+
+# Python gitignore
+__pycache__/
+venv/
