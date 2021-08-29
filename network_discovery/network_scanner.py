@@ -4,6 +4,7 @@ from threading import Thread
 from time import time
 
 import scapy.all as scapy
+from mac_vendor_lookup import MacLookup
 from netifaces import AF_INET, gateways, ifaddresses
 
 
@@ -33,7 +34,8 @@ class ArpSpoofing:
         gw = gateways().get('default' or None).get(AF_INET)[0]
         if gw:
             return gw
-
+    def GetVendorByMac(self,mac: str) -> str:
+        return MacLookup().lookup(mac)
     def __Get_NetWork_Range(self):
         cidr = self.__get_netmask_for_running_iface()
         local_ip = self.__get_local_ip()
@@ -82,7 +84,7 @@ class ArpSpoofing:
             if self.spoof:
                 Thread(target=self.Spoofer, args=(
                     element[1].psrc, element[1].hwsrc, self.GatewayAddr)).start()
-            print(F"IP: {element[1].psrc} Mac: {element[1].hwsrc}")
+            print(F"IP: {element[1].psrc} Mac: {element[1].hwsrc}, Vendor: {self.GetVendorByMac(element[1].hwsrc)}")
             try:
                 print(f"Hostname: {gethostbyaddr(element[1].psrc)[0]}")
             except:
