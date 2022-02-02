@@ -8,7 +8,12 @@ from netifaces import gateways, AF_INET, ifaddresses, interfaces
 
 
 class ArpSpoofing:
-    def __init__(self, ip_range: str = None, spoof: bool = False, gethostname: bool = False, ):
+    def __init__(
+        self,
+        ip_range: str = None,
+        spoof: bool = False,
+        gethostname: bool = False,
+    ):
         self.sp = scapy
         if ip_range:
             self.ip_range = ip_range
@@ -27,10 +32,10 @@ class ArpSpoofing:
         return str(interfaces()[2])
 
     def __get_netmask_for_running_iface(self):
-        return ifaddresses(self.__getRunningIface).get(2)[0].get('netmask')
+        return ifaddresses(self.__getRunningIface).get(2)[0].get("netmask")
 
     def __getGatewayAddress(self):
-        gw = gateways().get('default' or None).get(AF_INET)[0]
+        gw = gateways().get("default" or None).get(AF_INET)[0]
         if gw:
             return gw
 
@@ -59,7 +64,7 @@ class ArpSpoofing:
             return self.sp.ARP(pdst=self.ip_range, op=1)
 
     def MakeEtherFrame(self):
-        return self.sp.Ether(dst='ff:ff:ff:ff:ff:ff')
+        return self.sp.Ether(dst="ff:ff:ff:ff:ff:ff")
 
     def MakeArpBroadCast(self):
         return self.MakeEtherFrame() / self.MakeArpRequest()
@@ -76,18 +81,22 @@ class ArpSpoofing:
         print(answered)
         for target in answered:
             if self.spoof:
-                Thread(target=self.Spoofer, args=(target[1].psrc, target[1].hwsrc, self.GatewayAddr)).start()
-            print(F"IP: {target[1].psrc} Mac: {target[1].hwsrc}")
+                Thread(
+                    target=self.Spoofer,
+                    args=(target[1].psrc, target[1].hwsrc, self.GatewayAddr),
+                ).start()
+            print(f"IP: {target[1].psrc} Mac: {target[1].hwsrc}")
             try:
                 print(f"Hostname: {gethostbyaddr(target[1].psrc)[0]}")
             except:
                 pass
-            print('-' * 40)
+            print("-" * 40)
         print(
             f"Interface: {self.__getRunningIface}"
             f"\nNetwork Address: {self.__Get_NetWork_Range()}"
             f"\nTotal discovered devices: {len(answered)}"
-            f"\nTaken Time: {round(time() - start_time, 2)}s")
+            f"\nTaken Time: {round(time() - start_time, 2)}s"
+        )
 
 
 arp = ArpSpoofing(spoof=False)
