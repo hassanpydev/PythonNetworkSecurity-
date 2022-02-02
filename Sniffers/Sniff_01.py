@@ -11,17 +11,15 @@ from ProtocolParser import (
 
 def SniffedPackets(pkt):
     if pkt.haslayer(scapy.Ether):
-        # EthernetParser(pkt=pkt[scapy.Ether])
+        EthernetParser(pkt=pkt[scapy.Ether])
         if pkt.haslayer(scapy.IP):
 
-            # IPv4Parser(pkt=pkt[scapy.IP])
+            IPv4Parser(pkt=pkt[scapy.IP])
 
             if pkt.haslayer(scapy.TCP):
-                # TCP_Parser(pkt=pkt[scapy.TCP])
-                pass
+                TCP_Parser(pkt=pkt[scapy.TCP])
             elif pkt.haslayer(scapy.UDP):
-                # UDP_Parser(pkt=pkt[scapy.UDP])
-                pass
+                UDP_Parser(pkt=pkt[scapy.UDP])
             elif pkt.haslayer(scapy.ICMP):
                 icmp_data = pkt.getlayer(scapy.ICMP)
                 ICMP_Parser(pkt=pkt)
@@ -34,8 +32,7 @@ def SniffedPackets(pkt):
                 print("=" * 30)
 
     elif pkt.haslayer(scapy.Dot3):
-        # print("Dot3 is not supported")
-        pass
+        print("Dot3 is not supported")
     else:
         print(list(pkt))
     # if pkt.haslayer(http.HTTPRequest):
